@@ -1,0 +1,109 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+:root {
+  --radius: 0.75rem;
+}
+
+/* 主题 1：极简黑白 */
+[data-theme="minimal"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-secondary: #f8fafc;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --primary: #000000;
+  --primary-hover: #1a1a1a;
+  --primary-foreground: #ffffff;
+}
+
+/* 主题 2：活力橙 */
+[data-theme="orange"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-secondary: #fffbeb;
+  --surface: #ffffff;
+  --surface-hover: #fef3c7;
+  --border: #fed7aa;
+  --text: #78350f;
+  --text-secondary: #92400e;
+  --primary: #f97316;
+  --primary-hover: #ea580c;
+  --primary-foreground: #ffffff;
+}
+
+/* 主题 3：专业蓝 */
+[data-theme="blue"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-secondary: #eff6ff;
+  --surface: #ffffff;
+  --surface-hover: #dbeafe;
+  --border: #bfdbfe;
+  --text: #1e3a5f;
+  --text-secondary: #3b82f6;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-foreground: #ffffff;
+}
+
+/* 主题 4：优雅紫 */
+[data-theme="purple"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-secondary: #faf5ff;
+  --surface: #ffffff;
+  --surface-hover: #f3e8ff;
+  --border: #d8b4fe;
+  --text: #3b0764;
+  --text-secondary: #7c3aed;
+  --primary: #7c3aed;
+  --primary-hover: #6d28d9;
+  --primary-foreground: #ffffff;
+}
+
+/* 主题 5：暗夜蓝 */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --bg-secondary: #1e293b;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --border: #334155;
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-foreground: #ffffff;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
