@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@heroui/react";
 import { useContentStore } from "../../../shared/stores/contentStore";
 import { useProjectStore } from "../../../shared/stores/projectStore";
 import { useToast } from "../../../shared/components/Toast";
 import { AIAssist } from "../../../shared/components/AIAssist";
 import { runPreDeployChecks } from "../../../services/seoGenerator";
+import { sanitizeUrl } from "../../../shared/utils/helpers";
 
 interface SEOSettingsProps {
   siteId: string;
 }
+
+const GA_ID_REGEX = /^G-[A-Z0-9]+$/i;
 
 export function SEOSettings({ siteId }: SEOSettingsProps) {
   const { getContent, setContent } = useContentStore();
@@ -22,16 +25,39 @@ export function SEOSettings({ siteId }: SEOSettingsProps) {
   const [analyticsId, setAnalyticsId] = useState(getContent(siteId, "seo_analytics_id") || "");
 
   const handleSave = () => {
-    setContent(siteId, "seo_title", title);
-    setContent(siteId, "seo_description", description);
-    setContent(siteId, "seo_keywords", keywords);
-    setContent(siteId, "seo_og_image", ogImage);
-    setContent(siteId, "seo_analytics_id", analyticsId);
+    // 输入验证
+    const sanitizedTitle = title.trim().slice(0, 200);
+    const sanitizedDesc = description.trim().slice(0, 500);
+    const sanitizedKeywords = keywords.trim().slice(0, 500);
+    const sanitizedOgImage = ogImage.trim() ? sanitizeUrl(ogImage.trim()) : "";
+    const sanitizedAnalytics = analyticsId.trim();
+
+    // 验证 GA ID 格式
+    if (sanitizedAnalytics && !GA_ID_REGEX.test(sanitizedAnalytics)) {
+      toast("Google Analytics ID 格式不正确，应为 G-XXXXXXXXXX", "error");
+      return;
+    }
+
+    setContent(siteId, "seo_title", sanitizedTitle);
+    setContent(siteId, "seo_description", sanitizedDesc);
+    setContent(siteId, "seo_keywords", sanitizedKeywords);
+    setContent(siteId, "seo_og_image", sanitizedOgImage);
+    setContent(siteId, "seo_analytics_id", sanitizedAnalytics);
+
+    // 同步本地 state
+    setTitle(sanitizedTitle);
+    setDescription(sanitizedDesc);
+    setKeywords(sanitizedKeywords);
+    setOgImage(sanitizedOgImage);
+    setAnalyticsId(sanitizedAnalytics);
+
     toast("SEO 设置已保存", "success");
   };
 
-  // 部署前检查
-  const checks = currentProject ? runPreDeployChecks(currentProject) : [];
+  // 部署前检查（useMemo 避免每次渲染重新计算）
+  const checks = useMemo(() => {
+    return currentProject ? runPreDeployChecks(currentProject) : [];
+  }, [currentProject]);
 
   return (
     <div>

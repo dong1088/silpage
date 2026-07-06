@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "../../../shared/components/Toast";
 
 interface ImageUploaderProps {
@@ -6,23 +6,45 @@ interface ImageUploaderProps {
   currentImage?: string;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
 export function ImageUploader({ onUpload, currentImage }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(currentImage || null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast("请选择图片文件", "error");
+    // 格式校验
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast("仅支持 JPG、PNG、GIF、WebP 格式", "error");
+      return;
+    }
+
+    // 大小校验
+    if (file.size > MAX_FILE_SIZE) {
+      toast("文件大小不能超过 5MB", "error");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
+      if (!mountedRef.current) return;
       const url = e.target?.result as string;
       setPreview(url);
       onUpload(url);
+    };
+    reader.onerror = () => {
+      if (!mountedRef.current) return;
+      toast("图片读取失败，请重试", "error");
     };
     reader.readAsDataURL(file);
   };

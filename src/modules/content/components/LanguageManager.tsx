@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@heroui/react";
 import { useProjectStore } from "../../../shared/stores/projectStore";
 import { useContentStore } from "../../../shared/stores/contentStore";
@@ -15,14 +15,39 @@ export function LanguageManager({ siteId }: LanguageManagerProps) {
   const { toast } = useToast();
 
   const [newLang, setNewLang] = useState("");
-  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatingLangs, setTranslatingLangs] = useState<Set<string>>(new Set());
   const [showApiConfig, setShowApiConfig] = useState(false);
-  const [apiConfig, setApiConfig] = useState<TranslationConfig>({
-    provider: "openai",
-    apiKey: "",
-    apiUrl: "",
-    model: "",
+  const [apiConfig, setApiConfig] = useState<TranslationConfig>(() => {
+    // 尝试从 localStorage 恢复 API Key
+    try {
+      const saved = localStorage.getItem("silpage-ai-config");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...parsed };
+      }
+    } catch { /* ignore */ }
+    return {
+      provider: "openai",
+      apiKey: "",
+      apiUrl: "",
+      model: "",
+    };
   });
+
+  // 持久化 API Key 到 localStorage
+  const updateApiConfig = (config: TranslationConfig) => {
+    setApiConfig(config);
+    try {
+      localStorage.setItem("silpage-ai-config", JSON.stringify(config));
+    } catch { /* ignore */ }
+  };
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   if (!currentProject) return null;
 
@@ -58,7 +83,7 @@ export function LanguageManager({ siteId }: LanguageManagerProps) {
       return;
     }
 
-    setIsTranslating(true);
+    setTranslatingLangs((prev) => new Set(prev).add(targetLang));
     try {
       // 获取所有内容
       const contents = getSiteContents(siteId);
@@ -71,11 +96,12 @@ export function LanguageManager({ siteId }: LanguageManagerProps) {
 
       if (Object.keys(contentMap).length === 0) {
         toast('暂无内容需要翻译，请先在"内容管理"中填写内容', "info");
-        setIsTranslating(false);
         return;
       }
 
       const translated = await translateBatch(contentMap, defaultLang, targetLang, apiConfig);
+
+      if (!mountedRef.current) return;
 
       // 保存翻译结果
       const i18nKey = `i18n_${targetLang}`;
@@ -86,9 +112,16 @@ export function LanguageManager({ siteId }: LanguageManagerProps) {
 
       toast(`已翻译为 ${LANGUAGES[targetLang]}，共 ${Object.keys(translated).length} 条`, "success");
     } catch (err) {
+      if (!mountedRef.current) return;
       toast("翻译失败：" + (err instanceof Error ? err.message : String(err)), "error");
     } finally {
-      setIsTranslating(false);
+      if (mountedRef.current) {
+        setTranslatingLangs((prev) => {
+          const next = new Set(prev);
+          next.delete(targetLang);
+          return next;
+        });
+      }
     }
   };
 
@@ -120,11 +153,11 @@ export function LanguageManager({ siteId }: LanguageManagerProps) {
                 <>
                   <button
                     onClick={() => handleTranslateAll(lang)}
-                    disabled={isTranslating}
+                    disabled={translatingLangs.has(lang)}
                     className="text-xs px-3 py-1 rounded hover:opacity-80"
                     style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
                   >
-                    {isTranslating ? "翻译中..." : "AI 翻译"}
+                    {translatingLangs.has(lang) ? "翻译中..." : "AI 翻译"}
                   </button>
                   <button
                     onClick={() => handleRemoveLanguage(lang)}
@@ -192,7 +225,7 @@ export function LanguageManager({ siteId }: LanguageManagerProps) {
               <input
                 type="password"
                 value={apiConfig.apiKey}
-                onChange={(e) => setApiConfig({ ...apiConfig, apiKey: e.target.value })}
+                onChange={(e) => updateApiConfig({ ...apiConfig, apiKey: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg text-sm"
                 style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}
                 placeholder="sk-..."
@@ -204,7 +237,7 @@ export function LanguageManager({ siteId }: LanguageManagerProps) {
                 <input
                   type="text"
                   value={apiConfig.apiUrl || ""}
-                  onChange={(e) => setApiConfig({ ...apiConfig, apiUrl: e.target.value })}
+                  onChange={(e) => updateApiConfig({ ...apiConfig, apiUrl: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                   style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}
                   placeholder="https://api.example.com/v1/chat/completions"
@@ -216,14 +249,14 @@ export function LanguageManager({ siteId }: LanguageManagerProps) {
               <input
                 type="text"
                 value={apiConfig.model || ""}
-                onChange={(e) => setApiConfig({ ...apiConfig, model: e.target.value })}
+                onChange={(e) => updateApiConfig({ ...apiConfig, model: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg text-sm"
                 style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}
                 placeholder="gpt-4o-mini / claude-haiku-4-5-20251001"
               />
             </div>
             <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-              API Key 仅保存在内存中，不会写入磁盘
+              API Key 会保存在浏览器本地存储中，方便下次使用
             </p>
           </div>
         )}

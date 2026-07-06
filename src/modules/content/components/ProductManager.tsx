@@ -77,6 +77,18 @@ export function ProductManager({ siteId }: ProductManagerProps) {
       return;
     }
 
+    // 价格校验
+    if (isNaN(formData.price) || formData.price < 0) {
+      toast("请输入有效的价格", "error");
+      return;
+    }
+
+    // 库存校验
+    if (formData.stock !== undefined && (isNaN(formData.stock) || formData.stock < 0)) {
+      toast("请输入有效的库存数量", "error");
+      return;
+    }
+
     const productData = {
       siteId,
       name: formData.name,

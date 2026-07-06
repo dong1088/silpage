@@ -61,11 +61,17 @@ export function SitePage() {
     }
   }, [siteId, loadProject]);
 
-  // 项目加载后设置默认页面（只在首次加载时）
+  // 站点变化时重置 initRef（确保切换站点后重新初始化）
+  useEffect(() => {
+    initRef.current = false;
+    setActivePageId("");
+  }, [siteId]);
+
+  // 项目加载后设置默认页面
   const initRef = useRef(false);
   useEffect(() => {
     if (!project || initRef.current) return;
-    if (!activePageId && project.pages.length > 0) {
+    if (project.pages.length > 0) {
       setActivePageId(project.pages[0].id);
     }
     const template = templates.find((t) => t.id === project.template);
@@ -73,7 +79,7 @@ export function SitePage() {
       setCustomization({ colors: template.defaultColors, font: template.defaultFont });
     }
     initRef.current = true;
-  }, [project, activePageId]);
+  }, [project]);
 
   // 站点不存在时跳回首页（加载完成后检查）
   useEffect(() => {

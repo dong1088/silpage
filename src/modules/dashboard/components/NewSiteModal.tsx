@@ -39,11 +39,7 @@ export function NewSiteModal({ isOpen, onClose, onSubmit, onApplyBlueprint }: Ne
       if (mode === "blueprint" && selectedBlueprint && onApplyBlueprint) {
         onApplyBlueprint(selectedBlueprint);
       }
-      setName("");
-      setDescription("");
-      setSelectedTemplate(null);
-      setSelectedBlueprint(null);
-      onClose();
+      handleClose();
     } catch (err) {
       console.error("创建站点失败:", err);
       toast("创建站点失败：" + (err instanceof Error ? err.message : String(err)), "error");
@@ -52,10 +48,19 @@ export function NewSiteModal({ isOpen, onClose, onSubmit, onApplyBlueprint }: Ne
     }
   };
 
+  const handleClose = () => {
+    setName("");
+    setDescription("");
+    setSelectedTemplate(null);
+    setSelectedBlueprint(null);
+    setIsCreating(false);
+    onClose();
+  };
+
   return (
     <>
       <Modal>
-        <Modal.Backdrop isOpen={isOpen} onOpenChange={onClose}>
+        <Modal.Backdrop isOpen={isOpen} onOpenChange={handleClose}>
           <Modal.Container>
             <Modal.Dialog>
               <Modal.CloseTrigger />

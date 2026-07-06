@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@heroui/react";
 import { DeployPlatform, DeployConfig } from "../../../shared/types";
 import { useDeployStore } from "../../../shared/stores/deployStore";
@@ -45,6 +45,8 @@ export function DeployPanel({ siteId, siteName, onDeploy }: DeployPanelProps) {
     }
     setIsDeploying(true);
     try {
+      // 部署时会通过 SitePage 的 handleDeploy 获取实际页面内容
+      // 这里传空字符串，SitePage 会从 store 中获取
       await onDeploy("", "");
     } finally {
       setIsDeploying(false);

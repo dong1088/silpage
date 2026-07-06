@@ -98,6 +98,22 @@ export interface DeployHistory {
   deployedAt: string;
 }
 
+// ===== 生成器 =====
+export interface GenerateResult {
+  success: boolean;
+  outputDir: string;
+  error?: string;
+  buildLog?: string[];
+}
+
+export interface GenerateOptions {
+  contents?: ContentItem[];
+  products?: ProductInfo[];
+  baseUrl?: string;
+  languages?: string[];
+  skipBuild?: boolean;
+}
+
 // ===== 内容 =====
 export interface ContentItem {
   id: string;
